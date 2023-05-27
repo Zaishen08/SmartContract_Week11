@@ -10,7 +10,7 @@ import { IUniswapV2Router01 } from "v2-periphery/interfaces/IUniswapV2Router01.s
 import { IWETH } from "v2-periphery/interfaces/IWETH.sol";
 import { IFakeLendingProtocol } from "./interfaces/IFakeLendingProtocol.sol";
 
-// This is liquidator contrac for testing,
+// This is liquidator contract for testing,
 // all you need to implement is flash swap from uniswap pool and call lending protocol liquidate function in uniswapV2Call
 // lending protocol liquidate rule can be found in FakeLendingProtocol.sol
 contract Liquidator is IUniswapV2Callee, Ownable {
@@ -56,9 +56,17 @@ contract Liquidator is IUniswapV2Callee, Ownable {
         require(amount0 > 0 || amount1 > 0, "amount0 or amount1 must be greater than 0");
 
         // 4. decode callback data
+        CallbackData memory cbd = abi.decode(data,(CallbackData));
+
         // 5. call liquidate
+        IERC20(cbd.tokenIn).approve(_FAKE_LENDING_PROTOCOL,cbd.amountIn);
+        IFakeLendingProtocol(_FAKE_LENDING_PROTOCOL).liquidatePosition();
+
         // 6. deposit ETH to WETH9, because we will get ETH from lending protocol
+        IWETH(_WETH9).deposit{value: cbd.amountOut}();
+
         // 7. repay WETH to uniswap pool
+        require(IERC20(cbd.tokenOut).transfer(msg.sender,cbd.amountOut),"Repay Fail");
 
         // check profit
         require(address(this).balance >= _MINIMUM_PROFIT, "Profit must be greater than 0.01 ether");
@@ -68,8 +76,23 @@ contract Liquidator is IUniswapV2Callee, Ownable {
     function liquidate(address[] calldata path, uint256 amountOut) external {
         require(amountOut > 0, "AmountOut must be greater than 0");
         // 1. get uniswap pool address
+        address pool = IUniswapV2Factory(_UNISWAP_FACTORY).getPair(path[0],path[1]);
+
         // 2. calculate repay amount
+        uint256 repayAmount = IUniswapV2Router01(_UNISWAP_ROUTER).getAmountsIn(amountOut,path)[0];
+
+//      address token0 = IUniswapV2Pair(pool).token0();
+//      address token1 = IUniswapV2Pair(pool).token1();
+
         // 3. flash swap from uniswap pool
+        CallbackData memory cbd = CallbackData({tokenIn:path[1],      //U
+                                                tokenOut:path[0],     //E
+                                                amountIn:amountOut,   //U
+                                                amountOut:repayAmount //e repay
+        });
+
+        IUniswapV2Pair(pool).swap(0, amountOut, address(this), abi.encode(cbd));
+
     }
 
     receive() external payable {}
