@@ -6,5 +6,9 @@
     <mapping directory="$PROJECT_DIR$/section3/FlashSwapPractice/lib/forge-std/lib/ds-test" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/section3/FlashSwapPractice/lib/v2-core" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/section3/FlashSwapPractice/lib/v2-periphery" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/section3/SandwichPractice/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/section3/SandwichPractice/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/section3/SandwichPractice/lib/v2-core" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/section3/SandwichPractice/lib/v2-periphery" vcs="Git" />
   </component>
 </project>

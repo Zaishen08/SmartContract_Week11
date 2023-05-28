@@ -40,8 +40,12 @@ contract Arbitrage is IUniswapV2Callee, Ownable {
         require(amount0 > 0 || amount1 > 0, "amount0 or amount1 must be greater than 0");
 
         // 3. decode callback data
+        CallbackData memory callback = abi.decode(data, (CallbackData));
         // 4. swap WETH to USDC
+        IERC20(callback.borrowToken).transfer(callback.targetSwapPool, callback.borrowAmount);
+        IUniswapV2Pair(callback.targetSwapPool).swap(0, callback.debtAmountOut, address(this), new bytes(0));
         // 5. repay USDC to lower price pool
+        require(IERC20(callback.debtToken).transfer(callback.borrowPool, callback.debtAmount), "Repay failed");
     }
 
     // Method 1 is
@@ -55,10 +59,17 @@ contract Arbitrage is IUniswapV2Callee, Ownable {
     // for testing convenient, we implement the method 1 here
     function arbitrage(address priceLowerPool, address priceHigherPool, uint256 borrowETH) external {
         // 1. finish callbackData
-        // 2. flash swap (borrow WETH from lower price pool)
+        CallbackData memory callbackData;
+        callbackData.borrowPool = priceLowerPool;                            // Lower pool
+        callbackData.targetSwapPool = priceHigherPool;                       // Higher pool
+        callbackData.borrowAmount = lowerUSDC;                               // Borrowed USDC
+        callbackData.borrowToken = IUniswapV2Pair(priceLowerPool).token0();  // WETH
+        callbackData.debtToken = IUniswapV2Pair(priceLowerPool).token1();    // USDC
+        callbackData.debtAmount = borrowETH;                                 // Higher pool amountIn
+        callbackData.debtAmountOut = higherUSDC;                             // Higher pool amountOut
 
-        // Uncomment next line when you do the homework
-        // IUniswapV2Pair(priceLowerPool).swap(borrowETH, 0, address(this), abi.encode(callbackData));
+        // 2. flash swap (borrow WETH from lower price pool)
+        IUniswapV2Pair(priceLowerPool).swap(borrowETH, 0, address(this), abi.encode(callbackData));
     }
 
     //
